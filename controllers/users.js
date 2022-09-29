@@ -6,10 +6,13 @@ const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 
 // Аутентификация пользователя
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
     .then((user) => {
+      if (!user || !password) {
+        return next(new BadRequestError('Неверный email или пароль.'));
+      }
       const token = jwt.sign(
         { _id: user._id },
         'some-secret-key',
@@ -17,11 +20,9 @@ module.exports.login = (req, res) => {
           expiresIn: '7d',
         },
       );
-      res.send({ token });
+      return res.send({ token });
     })
-    .catch((err) => {
-      res.status(401).send({ message: err.message });
-    });
+    .catch(next);
 };
 
 module.exports.getUsers = (req, res, next) => {
@@ -67,7 +68,7 @@ module.exports.createUser = (req, res, next) => {
       });
     })
     .then((user) => {
-      res.status(200).send({
+      res.send({
         name: user.name,
         about: user.about,
         avatar: user.avatar,
@@ -87,12 +88,10 @@ module.exports.getCurrentUser = (req, res, next) => {
   const { _id } = req.user;
   User.findById(_id).then((user) => {
     if (!user) {
-      return Promise.reject(new Error('Пользователь не найден.'));
+      return next(new NotFoundError('Пользователь не найден.'));
     }
     return res.status(200).send(user);
-  }).catch((err) => {
-    next(err);
-  });
+  }).catch(next);
 };
 
 module.exports.updateUser = (req, res, next) => {
