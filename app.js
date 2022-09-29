@@ -1,7 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const { ERROR_NOT_FOUND } = require('./utils/utils');
+const { errors } = require('celebrate');
+const auth = require('./middlewares/auth');
+const errorHandler = require('./middlewares/errorHandler');
+const { createUser, login } = require('./controllers/users');
+const {
+  signUp, signIn,
+} = require('./middlewares/validations');
+const NotFoundError = require('./errors/NotFoundError');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -15,17 +22,20 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '63222af8321717a1989b1666',
-  };
+app.post('/signin', signIn, login);
+app.post('/signup', signUp, createUser);
 
-  next();
-});
+app.use(auth);
 
 app.use('/', require('./routes/users'));
 app.use('/', require('./routes/cards'));
 
-app.use((req, res) => res.status(ERROR_NOT_FOUND).send({ message: 'Страница не найдена' }));
+app.use('*', (req, res, next) => {
+  next(new NotFoundError('Страница не найдена'));
+});
+
+app.use(errors());
+
+app.use(errorHandler);
 
 app.listen(PORT);
