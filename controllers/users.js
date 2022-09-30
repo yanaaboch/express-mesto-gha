@@ -5,7 +5,46 @@ const ConflictError = require('../errors/ConflictError');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 
-// Аутентификация пользователя
+// Создание пользователя
+module.exports.createUser = (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    next(new BadRequestError('Неправильный логин или пароль.'));
+  }
+
+  return User.findOne({ email }).then((user) => {
+    if (user) {
+      next(new ConflictError(`Пользователь с ${email} уже существует.`));
+    }
+
+    return bcrypt.hash(password, 10);
+  })
+    .then((hash) => {
+      User.create({
+        email,
+        password: hash,
+        name: req.body.name,
+        about: req.body.about,
+        avatar: req.body.avatar,
+      });
+    })
+    .then((user) => res.status(200).send({
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      _id: user._id,
+      email: user.email,
+    }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Неверные данные о пользователе или неверная ссылка на аватар.'));
+      }
+      return next(err);
+    });
+};
+
+// Аутентификация
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   return User.findUserByCredentials(email, password)
@@ -41,47 +80,6 @@ module.exports.getUserById = (req, res, next) => {
       return res.status(200).send(user);
     })
     .catch(next);
-};
-
-// Создание нового пользователя
-module.exports.createUser = (req, res, next) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    next(new BadRequestError('Неправильный логин или пароль.'));
-  }
-
-  return User.findOne({ email }).then((user) => {
-    if (user) {
-      next(new ConflictError(`Пользователь с ${email} уже существует.`));
-    }
-
-    return bcrypt.hash(req.body.password, 10);
-  })
-    .then((hash) => {
-      User.create({
-        email,
-        password: hash,
-        name: req.body.name,
-        about: req.body.about,
-        avatar: req.body.avatar,
-      });
-    })
-    .then((user) => {
-      res.send({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        _id: user._id,
-        email: user.email,
-      });
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Неверные данные о пользователе или неверная ссылка на аватар.'));
-      }
-      return next(err);
-    });
 };
 
 module.exports.getCurrentUser = (req, res, next) => {
