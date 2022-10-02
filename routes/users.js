@@ -1,6 +1,6 @@
 const router = require('express').Router();
-const {
-  userIdValidation,
+const { celebrate, Joi } = require('celebrate');
+const { // userIdValidation,
   updateUserValidation,
   updateAvatarValidation,
 } = require('../middlewares/validations');
@@ -15,9 +15,14 @@ const {
 
 router.get('/users', getUsers);
 
-router.get('/users/:userId', userIdValidation, getUserById);
-
 router.get('/users/me', getCurrentUser);
+
+router.get('/users/:userId', celebrate({
+  params: Joi.object().keys({
+    userId: Joi.string().required().hex().min(24)
+      .max(24),
+  }),
+}), getUserById);
 
 router.patch('/users/me', updateUserValidation, updateUser);
 

@@ -23,19 +23,17 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  const { cardId } = req.params;
-  const { userId } = req.user._id;
-  Card.findById(cardId)
+  Card.findById(req.params.cardId)
     // eslint-disable-next-line consistent-return
     .then((card) => {
       if (!card) {
         throw new NotFoundError('Карточка не найдена.');
       }
-      if (card.owner !== userId) {
+      if (card.owner.toString() !== req.user._id) {
         throw new ForbiddenError('Нельзя удалить чужую карточку!');
       }
-      Card.findByIdAndRemove(cardId)
-        .then((deletedCard) => res.status(200).send(deletedCard))
+      Card.findByIdAndDelete(req.params.cardId)
+        .then(() => res.status(200).send(card))
         .catch(next);
     })
     .catch(next);

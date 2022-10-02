@@ -27,7 +27,7 @@ const signUp = celebrate({
 const createCardValidation = celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
-    link: Joi.string().custom((value) => {
+    link: Joi.string().required().custom((value) => {
       if (!validator.isURL(value, { require_protocol: true })) {
         throw new BadRequestError('Неправильный формат URL адреса');
       }
@@ -38,15 +38,17 @@ const createCardValidation = celebrate({
 
 const cardIdValidation = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required().length(24).hex(),
+    cardId: Joi.string().required().min(24).max(24)
+      .hex(),
   }),
 });
 
-const userIdValidation = celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().required().length(24).hex(),
-  }),
-});
+// const userIdValidation = celebrate({
+// params: Joi.object().keys({
+// userId: Joi.string().required().min(24).max(24)
+// .hex(),
+// }),
+// });
 
 const updateUserValidation = celebrate({
   body: Joi.object().keys({
@@ -71,7 +73,7 @@ module.exports = {
   signIn,
   createCardValidation,
   cardIdValidation,
-  userIdValidation,
+  // userIdValidation,
   updateUserValidation,
   updateAvatarValidation,
 };
