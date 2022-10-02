@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-// const ConflictError = require('../errors/ConflictError');
+const ConflictError = require('../errors/ConflictError');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
 
@@ -15,8 +15,18 @@ module.exports.createUser = (req, res, next) => {
     password,
   } = req.body;
 
-  bcrypt
-    .hash(password, 10)
+  if (!email || !password) {
+    next(new BadRequestError('Неправильный логин или пароль.'));
+  }
+
+  return User.findOne({ email }).then((user) => {
+    if (user) {
+      next(new ConflictError(`Пользователь с ${email} уже существует.`));
+    }
+
+    return bcrypt
+      .hash(password, 10);
+  })
     .then((hash) => User.create({
       name,
       about,
