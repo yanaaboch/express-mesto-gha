@@ -5,14 +5,14 @@ const BadRequestError = require('../errors/BadRequestError');
 const signIn = celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(8).max(30),
+    password: Joi.string().required(),
   }),
 });
 
 const signUp = celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    password: Joi.string().required().min(8).max(30),
+    password: Joi.string().required(),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
     avatar: Joi.string().custom((value) => {
@@ -38,17 +38,10 @@ const createCardValidation = celebrate({
 
 const cardIdValidation = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required().min(24).max(24)
+    cardId: Joi.string().required().length(24)
       .hex(),
   }),
 });
-
-// const userIdValidation = celebrate({
-// params: Joi.object().keys({
-// userId: Joi.string().required().min(24).max(24)
-// .hex(),
-// }),
-// });
 
 const updateUserValidation = celebrate({
   body: Joi.object().keys({
