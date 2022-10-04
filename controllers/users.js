@@ -14,15 +14,8 @@ module.exports.createUser = (req, res, next) => {
     email,
     password,
   } = req.body;
-
-  return User.findOne({ email }).then((user) => {
-    if (user) {
-      next(new ConflictError(`Пользователь с ${email} уже существует.`));
-    }
-
-    return bcrypt
-      .hash(password, 10);
-  })
+  bcrypt
+    .hash(password, 10)
     .then((hash) => User.create({
       name,
       about,
